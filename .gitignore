@@ -1,0 +1,6 @@
+.vs/*
+bin/*
+obj/*
+WorkTimer.csproj.user
+WorkTimer.v12.suo
+WorkTimer_TemporaryKey.pfx
