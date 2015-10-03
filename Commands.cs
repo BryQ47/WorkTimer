@@ -1,8 +1,8 @@
 ﻿/*
 WorkTimer
-Autor: Marcin Bryk
+Author: Marcin Bryk
 
-Klasa ButtonCommand
+ButtonCommand class
 */
 
 using System;

@@ -1,9 +1,8 @@
 ﻿/*
 WorkTimer
-Autor: Marcin Bryk
+Author: Marcin Bryk
 
-Główny kontroler programu
-Pośredniczy pomiędzy widokiem a modelami: licznika, konfiguracji i statystyk.
+MainController class
 */
 
 using System;
@@ -50,7 +49,7 @@ namespace WorkTimer
             counter.Start();
         }
 
-        /* Odświeżenie podglądu aktualnego czasu pracy
+        /* Refreshes displaing time
         */
         public void UpdateTimeView(int hour, int minute)
         {
@@ -61,7 +60,7 @@ namespace WorkTimer
             }
         }
 
-        /* Wyświetlenie komunikatu okresowego
+        /* Shows periodic alert
         */
         public void DisplayPeriodicMessage(PeriodicMessage msg)
         {
@@ -82,61 +81,58 @@ namespace WorkTimer
                 if (!displayingUrgentMessage)
                 {
                     displayingUrgentMessage = true;
-                    MessageBox.Show(txt + config.getExitEventInfo(), "Time Info", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                    MessageBox.Show(txt + config.GetAdditionalFinishInfo(), "Time Info", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                     displayingUrgentMessage = false;
                 }
             }
         }
 
-        /* Wyświetla komunikat dla użytkownika z zapytaniem
-         * czy chce kontunuwać pracę z zachowanym uprzenio czasem
+        /* Asks user if he/she wants to continue last session
          */
         public bool ContinueCountingMessage()
         {
             return (MessageBox.Show("Continue with saved time?", "Time Info", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes);
         }
 
-        /* Ustawia parametr odpowiedzialny za widocznośc w pasku zadań
+        /* Sets window taskbar visibility
         */
         public void setTaskbarVisibilityParam(bool visible)
         {
             Application.Current.MainWindow.ShowInTaskbar = visible;
         }
 
-        /* Standardowe zakończenie programu z wyczyszczeniem zapisanego czasu pracy
-         * oraz zapisaniem statystyk i ewentualnie podsumowania pracy
+        /* Closes application:
+         * Clears session start time and optionally saves statistics
          */
         private void NormalExit()
         {
             string summary = "";
+            bool shutdown = true;
             config.ClearSavedTime();
 
-            SummaryDialog summaryDialog = new SummaryDialog();
-            if (config.ConfEnableSummaries)
+            if (config.StatsEnabled)
             {
-                if (summaryDialog.ShowDialog() == true)
+                if (config.SummariesEnabled)
                 {
+                    SummaryDialog summaryDialog = new SummaryDialog();
+                    shutdown = (bool)summaryDialog.ShowDialog();
                     summary = summaryDialog.Summary;
-                    stats.SaveWorkTime(summary);
-                    Application.Current.Shutdown();
                 }
+                if(shutdown)
+                    stats.SaveWorkTime(summary);
             }
-            else
-            {
-                stats.SaveWorkTime(summary);
+            if(shutdown)
                 Application.Current.Shutdown();
-            }
         }
 
-        /* Zakończenie działania programu z opcją wznowienia
-         * Nie są zapisywane statystyki
+        /* Closes application without clearing session start time or saving staistics
          */
         private void SaveExit()
         {
             Application.Current.Shutdown();
         }
 
-        /* Otworzenie widoku statystyk
+        /* Shows statistics view
         */
         private void ShowStatistics()
         {
@@ -146,7 +142,7 @@ namespace WorkTimer
 
         private bool IsButtonActive()
         {
-            return true; // Przyciski zawsze aktywne (no chyba, że wyświetlany jest dialog)
+            return true; // Buttons always active
         }
     }
 }

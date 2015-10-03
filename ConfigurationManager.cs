@@ -1,10 +1,8 @@
 ﻿/*
 WorkTimer
-Autor: Marcin Bryk
+Author: Marcin Bryk
 
-Menedżer konfiguracji
-Odpowiada za odczyt plików konfiguracyjnych i zgodną z nimi konfigurację programu
-Przechowuje zmienne konfiguracyjne wykorzystywane przez inne moduły.
+ConfigurationManager class
 */
 
 using System;
@@ -16,71 +14,262 @@ namespace WorkTimer
 {
     public class ConfigurationManager
     {
-        private static readonly string CONFIGURATION_FILE = "WTconfig.conf";    // Plik konfigracyjny
-        private static readonly string SAVED_TIME_FILE = "WTsaved.conf";        // Plik z czasem rozpoczęcia działania programu
-        private static readonly string[] SEPARATORS = { "\t" };                 // Separatory w pliku konfiguracyjnym
-        private static readonly string TRUE = "True";                           // Wartość wskazująca wybranie opcji w pliku konf.
-        //private static readonly string FALSE = "False";
-        private static readonly string NONE = "###";                            // Pusta wartośc w pliku z czasem rozpoczęcia działania programu
+        private static readonly string CONFIGURATION_FILE = "ConfigurationFiles\\Config.wt";        // File with configuration variables
+        private static readonly string SAVED_TIME_FILE = "ConfigurationFiles\\Saved.wt";            // File with program start time
+        private static readonly string ALERTS_FILE = "ConfigurationFiles\\Alerts.wt";               // File with alerst definitions
+        private static readonly string[] SEPARATORS = { "\t" };                 // Separators used in alerts file
+        private static readonly string TRUE = "true";                           // Value indicating boolean true in configuration files
+        private static readonly string FALSE = "false";                         // Value indicating boolean false in configuration files
+        private static readonly string NONE = "none";                           // Empty value in program start-time file
 
         private Counter counter;
         private MainController mainController;
+        private Dictionary<string, string> configVariables;
 
-        // Zmienne konfiguracyjne
-        public bool ConfEnableExitEventInfo { get; private set; }       // Czy wyświetlane są wiadomości o zadarzeniach czasowych przy komunikacie końcowym
-        public int ConfExitEventInfoNumber { get; private set; }        // Liczba wyświelanych zdarzeń czasowych
-        public string ConfExitEventInfoHeader { get; private set; }     // Nagłówek dla zdarzeń czasowych
-        public string ConfExitEventInfoFile { get; private set; }       // Plik ze zdarzeniami czasowymi
-        public bool ConfEnableSummaries { get; private set; }           // Opcja zbierania podsumowań na zakończenie pracy
-        public bool ConfVisibleOnTaskbar { get; private set; }          // Widoczność w pasku zadań
-        public string ConfHdrBeginnings { get; private set; }           // Nagłówek 1 kolumny w pliku eksportu statystyk
-        public string ConfHdrEndings { get; private set; }              // Nagłówek 2 kolumny w pliku eksportu statystyk
-        public string ConfHdrPeriods { get; private set; }              // Nagłówek 3 kolumny w pliku eksportu statystyk
-        public string ConfHdrComments { get; private set; }             // Nagłówek 4 kolumny w pliku eksportu statystyk
-        public string ConfHdrSum { get; private set; }                  // Opis dla sumy czasów
-        public string ConfHdrAvg { get; private set; }                  // Opis dla średniej czasów
-        public int ConfDefaultWorkTime { get; private set; }            // Domyślny czas pracy - pobierany z okresu powtarzania wiadomości pilnej
+        // Configuration variables
+        public bool EnableFinishEventInfo
+        {
+            get
+            {
+                return (configVariables["FinishAdditionalInfoEnabled"] == TRUE);
+            }
+            set
+            {
+                if (value == true)
+                    configVariables["FinishAdditionalInfoEnabled"] = TRUE;
+                else
+                    configVariables["FinishAdditionalInfoEnabled"] = FALSE;
+            }
+        }
+
+        public int FinishEventInfoNumber
+        {
+            get
+            {
+                return int.Parse(configVariables["FinishAdditionalInfoNumber"]);
+            }
+            set
+            {
+                configVariables["FinishAdditionalInfoNumber"] = value.ToString();
+            }
+        }
+                
+        public string FinishAdditionalInfoHeader
+        {
+            get
+            {
+                return configVariables["FinishAdditionalInfoHeader"];
+            }
+            set
+            {
+                configVariables["FinishAdditionalInfoHeader"] = value;
+            }
+        }
+
+        public string FinishAdditionalInfoFile
+        {
+            get
+            {
+                return configVariables["FinishAdditionalInfoFile"];
+            }
+            set
+            {
+                configVariables["FinishAdditionalInfoFile"] = value;
+            }
+        }
+
+        public bool SummariesEnabled
+        {
+            get
+            {
+                return (configVariables["SummariesEnabled"] == TRUE);
+            }
+            set
+            {
+                if (value == true)
+                    configVariables["SummariesEnabled"] = TRUE;
+                else
+                    configVariables["SummariesEnabled"] = FALSE;
+            }
+        }
+
+        public bool VisibleInTaskbar
+        {
+            get
+            {
+                return (configVariables["VisibleInTaskbar"] == TRUE);
+            }
+            set
+            {
+                if (value == true)
+                    configVariables["VisibleInTaskbar"] = TRUE;
+                else
+                    configVariables["VisibleInTaskbar"] = FALSE;
+            }
+        }
+
+        public bool StatsEnabled
+        {
+            get
+            {
+                return (configVariables["StatsEnables"] == TRUE);
+            }
+            set
+            {
+                if (value == true)
+                    configVariables["StatsEnables"] = TRUE;
+                else
+                    configVariables["StatsEnables"] = FALSE;
+            }
+        }
+
+        public string HdrBeginnings
+        {
+            get
+            {
+                return configVariables["StatsBeginningsHeader"];
+            }
+            set
+            {
+                configVariables["StatsBeginningsHeader"] = value;
+            }
+        }
+
+        public string HdrEndings
+        {
+            get
+            {
+                return configVariables["StatsEndingsHeader"];
+            }
+            set
+            {
+                configVariables["StatsEndingsHeader"] = value;
+            }
+        }
+
+        public string HdrTime
+        {
+            get
+            {
+                return configVariables["StatsTimeHeader"];
+            }
+            set
+            {
+                configVariables["StatsTimeHeader"] = value;
+            }
+        }
+
+        public string HdrComments
+        {
+            get
+            {
+                return configVariables["StatsCommentsHeader"];
+            }
+            set
+            {
+                configVariables["StatsCommentsHeader"] = value;
+            }
+        }
+
+        public string HdrSum
+        {
+            get
+            {
+                return configVariables["StatsSumHeader"];
+            }
+            set
+            {
+                configVariables["StatsSumHeader"] = value;
+            }
+        }
+
+        public string HdrAvg
+        {
+            get
+            {
+                return configVariables["StatsAverageHeader"];
+            }
+            set
+            {
+                configVariables["StatsAverageHeader"] = value;
+            }
+        }
+
+        public int DefaultWorkTime
+        {
+            get
+            {
+                return int.Parse(configVariables["DefaultWorkTime"]);
+            }
+            set
+            {
+                configVariables["DefaultWorkTime"] = value.ToString();
+            }
+        }
+
+        public string OnFinishMsg
+        {
+            get
+            {
+                return configVariables["OnFinishMessage"];
+            }
+            set
+            {
+                configVariables["OnFinishMessage"] = value;
+            }
+        }
+
+        public bool BalanceOn
+        {
+            get
+            {
+                return (configVariables["BalanceOn"] == TRUE);
+            }
+            set
+            {
+                if (value == true)
+                    configVariables["BalanceOn"] = TRUE;
+                else
+                    configVariables["BalanceOn"] = FALSE;
+            }
+        }
+
+        public int BalanceDays
+        {
+            get
+            {
+                return int.Parse(configVariables["BalanceDays"]);
+            }
+            set
+            {
+                configVariables["BalanceDays"] = value.ToString();
+            }
+        }
 
         public ConfigurationManager(Counter cnt, MainController v)
         {
             counter = cnt;
             mainController = v;
+            configVariables = new Dictionary<string, string>();
+        }
 
-            ConfEnableExitEventInfo = false;
-            ConfExitEventInfoNumber = 0;
-            ConfExitEventInfoHeader = "";
-            ConfExitEventInfoFile = "";     
-            ConfEnableSummaries = false;
-            ConfVisibleOnTaskbar = true;
-            ConfHdrBeginnings = "Beginning";
-            ConfHdrEndings = "Ending";
-            ConfHdrPeriods = "Time";
-            ConfHdrComments = "Description";
-            ConfHdrSum = "Sum";
-            ConfHdrAvg = "Average";
-    }
-
-        /* Wczytuje zawartość pliku konfiguracyjnrgo
-         * W zależności od jego zawartości i decyzji użytkownika:
-         * 1) Ładuje zawartość Countera na podstawie zapisanej zawartości
-         * 2) Ładuje Counter wartością 00:00 i zapisuje obecny czas w pliku konfiguracyjnym
-         * Wczytuje listę komunikatów i zapisuje ją timerze
-         * Ustawia czas początku pracy dla zarządcy statystyk (statisctic)
-         * Wczytuje aktualne ustawienia dotyczące wyświetlania informacji dodatkowych przy komunikacie końcowym
-         * Wczytuje pozostałe ustawienia konfiguracyjne
+        /* Loads program configuration from configuration files and beginning time of last session (if saved)
          */
         public void LoadConfiguration(StatisticsManager statistics)
         {
             string savedValue = File.ReadAllText(SAVED_TIME_FILE);
             DateTime startedAt;
 
-            // Wczytywanie czasu startu aplikacji
+            // Loads program start time
             if (!savedValue.Contains(NONE) && mainController.ContinueCountingMessage())
             {
                 startedAt = DateTime.Parse(savedValue);
                 TimeSpan dt = DateTime.Now.Subtract(startedAt);
+#if DEBUG
+                counter.Set(dt.Minutes, dt.Seconds);
+#else
                 counter.Set(dt.Hours, dt.Minutes);
-                //counter.Set(dt.Minutes, dt.Seconds); // @debug
+#endif
             }
             else
             {
@@ -90,24 +279,22 @@ namespace WorkTimer
             statistics.StartTime = startedAt;
             File.WriteAllText(SAVED_TIME_FILE, startedAt.ToString());
 
-
-            string[] lines = File.ReadAllLines(CONFIGURATION_FILE, Encoding.Unicode);
-            int msgOffset = loadConfigVariables(lines);
-            counter.MsgList = LoadMessageList(lines, msgOffset);
-            mainController.setTaskbarVisibilityParam(ConfVisibleOnTaskbar);
+            // Load remaining configuration elements
+            ReloadConfiguration();
         }
 
-        /* Ładuje do Countera aktualną zawartość listy komunikatów i ponownie wczytuje zmienne konfiguracyjne
+        /* Loads alerts and configuration variables from files
          */
         public void ReloadConfiguration()
         {
-            string[] lines = File.ReadAllLines(CONFIGURATION_FILE);
-            int msgOffset = loadConfigVariables(lines);
-            counter.MsgList = LoadMessageList(lines, msgOffset);
-            mainController.setTaskbarVisibilityParam(ConfVisibleOnTaskbar);
+            loadConfigVariables();
+            LinkedList<PeriodicMessage> alerts = LoadMessageList();
+            alerts.AddLast(new PeriodicMessage(DefaultWorkTime, false, OnFinishMsg, PeriodicMessage.MessageType.URGENT));
+            counter.MsgList = alerts;
+            mainController.setTaskbarVisibilityParam(VisibleInTaskbar);
         }
 
-        /* Unieważnia w pliku konfiguracyjnym wpis dotyczący początku odmierzania czasu
+        /* Clears last session saved time
          */
         public void ClearSavedTime()
         {
@@ -117,23 +304,23 @@ namespace WorkTimer
         /* Zwraca informace wyświetlane przy komunikacie końcowym (w postaci string) jeśli opcja ta została wybrana w pliku konfiguracyjnym
          * W przeciwnym wypadku zwrócony zostanie pusty string
          */
-        public string getExitEventInfo()
+        public string GetAdditionalFinishInfo()
         {
-            if (ConfEnableExitEventInfo)
+            if (EnableFinishEventInfo)
             {
-                StringBuilder finishInfo = new StringBuilder("\n" + ConfExitEventInfoHeader);
+                StringBuilder finishInfo = new StringBuilder("\n" + FinishAdditionalInfoHeader);
                 string line;
                 string[] lineContent;
                 string[] separators = { ":" };
                 var now = DateTime.Now;
-                using (var finishInfoFile = new StreamReader(ConfExitEventInfoFile))
+                using (var finishInfoFile = new StreamReader(FinishAdditionalInfoFile))
                 {
                     while((line = finishInfoFile.ReadLine()) != null)
                     {
                         lineContent = line.Split(separators, StringSplitOptions.None);
                         if ((now.Hour > Convert.ToInt32(lineContent[0])) || ((now.Hour == Convert.ToInt32(lineContent[0])) && (now.Minute > Convert.ToInt32(lineContent[1]))))
                             continue;
-                        for(int i = 0; (i < ConfExitEventInfoNumber) && (line != null); ++i)
+                        for(int i = 0; (i < FinishEventInfoNumber) && (line != null); ++i)
                         {
                             lineContent = line.Split(separators, StringSplitOptions.None);
                             finishInfo.Append("\n" + lineContent[0] + ":" + lineContent[1] + " - " + lineContent[2]);
@@ -148,97 +335,42 @@ namespace WorkTimer
                 return "";
         }
 
-        /* Wczytuje zmienne konfiguracyjne
+        /* Loads configuration variables from file
         */
-        private int loadConfigVariables(string[] lines)
+        private void loadConfigVariables()
         {
-            int i = 0;
+            string[] lines = File.ReadAllLines(CONFIGURATION_FILE, Encoding.Unicode);
 
-            foreach(string line in lines)
+            foreach (string line in lines)
             {
-
-                if(line.StartsWith("ExitEventsEnabled", StringComparison.Ordinal))
-                {
-                    ConfEnableExitEventInfo = (line.Contains(TRUE)) ? true : false;
-                }
-                else if (line.StartsWith("ExitEventsCount", StringComparison.Ordinal))
-                {
-                    ConfExitEventInfoNumber = Convert.ToInt32(line.Substring(line.IndexOf('=') + 1));
-                }
-                else if (line.StartsWith("ExitEventsFile", StringComparison.Ordinal))
-                {
-                    ConfExitEventInfoFile = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("ExitEventsHeader", StringComparison.Ordinal))
-                {
-                    ConfExitEventInfoHeader = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("StatisticsBeginningsHeader", StringComparison.Ordinal))
-                {
-                    ConfHdrBeginnings = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("StatisticsEndingsHeader", StringComparison.Ordinal))
-                {
-                    ConfHdrEndings = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("StatisticsPeriodsHeader", StringComparison.Ordinal))
-                {
-                    ConfHdrPeriods = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("StatisticsCommentsHeader", StringComparison.Ordinal))
-                {
-                    ConfHdrComments = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("StatisticsSumHeader", StringComparison.Ordinal))
-                {
-                    ConfHdrSum = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("StatisticsAverageHeader", StringComparison.Ordinal))
-                {
-                    ConfHdrAvg = line.Substring(line.IndexOf('=') + 1);
-                }
-                else if (line.StartsWith("SummariesEnabled", StringComparison.Ordinal))
-                {
-                    ConfEnableSummaries = (line.Contains(TRUE)) ? true : false;
-                }
-                else if (line.StartsWith("TaskbarVisibility", StringComparison.Ordinal))
-                {
-                    ConfVisibleOnTaskbar = (line.Contains(TRUE)) ? true : false;
-                }
-                else if (line.StartsWith("[MessagesInPriorityOrder]", StringComparison.Ordinal))
-                {
-                    return i + 2;
-                }
-                ++i;
+                if (line.StartsWith("#") || line == "") // Skip comment and empty lines
+                    continue;
+                int separatorIndex = line.IndexOf('=');
+                configVariables[line.Substring(0, separatorIndex)] = line.Substring(separatorIndex + 1);
             }
-
-            return 1000000;
         }
 
-        /* Zwraca odczytaną z podanej tablicy listę wiadomości
+        /* Loads alerts list form file
          */
-        private LinkedList<PeriodicMessage> LoadMessageList(string[] lines, int tableOffset)
+        private LinkedList<PeriodicMessage> LoadMessageList()
         {
             LinkedList<PeriodicMessage> tmplist = new LinkedList<PeriodicMessage>();
+            string[] lines = File.ReadAllLines(ALERTS_FILE, Encoding.Unicode);
             string[] lineContent;
-            ConfDefaultWorkTime = -1;
 
-            for (int i = tableOffset; i < lines.Length; ++i)
+            for (int i = 1; i < lines.Length; ++i)
             {
                 lineContent = lines[i].Split(SEPARATORS, StringSplitOptions.None);
                 if (lineContent[0].Contains(TRUE))
                 {
                     int period = Convert.ToInt32(lineContent[1]);
                     bool repeat = (lineContent[2].Contains(TRUE)) ? true : false;
-                    PeriodicMessage.MessageType type = (lineContent[3].Contains(TRUE)) ? PeriodicMessage.MessageType.URGENT : PeriodicMessage.MessageType.NORMAL;
-                    if (type == PeriodicMessage.MessageType.URGENT)
-                        ConfDefaultWorkTime = period;
-                    string msgtxt = lineContent[4];
-                    tmplist.AddLast(new PeriodicMessage(period, repeat, msgtxt, type));
+                    string msgtxt = lineContent[3];
+                    tmplist.AddLast(new PeriodicMessage(period, repeat, msgtxt, PeriodicMessage.MessageType.NORMAL));
                 }
             }
 
-            return tmplist;
+           return tmplist;
         }
     }
 }

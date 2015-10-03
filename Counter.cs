@@ -1,9 +1,8 @@
 ﻿/*
 WorkTimer
-Autor: Marcin Bryk
+Author: Marcin Bryk
 
-Licznik
-Odpowiada za odmierzanie czasu na bieżąco, generację i reagowanie na zdarzenia czasowe.
+Counter class
 */
 
 using System;
@@ -14,7 +13,12 @@ namespace WorkTimer
 {
     public class Counter
     {
-        private static readonly int MINUTE_INTERVAL = 60000; //60000; // @debug
+
+#if DEBUG
+        private static readonly int MINUTE_INTERVAL = 1000;
+#else
+        private static readonly int MINUTE_INTERVAL = 60000;
+#endif
 
         private MainController view;
         private Timer systemTimer;
@@ -57,8 +61,8 @@ namespace WorkTimer
             systemTimer.Elapsed += TimerEventHandler;
         }
 
-        /* Ustawia Counter na zadaną wartość
-         * Metoda nie powinna być używana w trakcie działania timera
+        /* Sets counter initial value
+         * Should not be used on running counter
          */
         public void Set(int hh, int mm)
         {
@@ -67,7 +71,7 @@ namespace WorkTimer
             counterValue = hh*60+mm;
         }
 
-        /* Start odmierzania czasu
+        /* Starts counter
         */
         public void Start()
         {
@@ -75,7 +79,7 @@ namespace WorkTimer
             view.UpdateTimeView(hour, min);
         }
 
-        /* Procedura obsługi wywoływana cyklicznie przez timer
+        /* Timer event handler
          */
         private void TimerEventHandler(Object source, ElapsedEventArgs e)
         {

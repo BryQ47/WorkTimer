@@ -1,8 +1,8 @@
 ﻿/*
 WorkTimer
-Autor: Marcin Bryk
+Author: Marcin Bryk
 
-Kontroler statystyk
+StatisticsController class
 */
 
 using System.ComponentModel;
@@ -30,7 +30,7 @@ namespace WorkTimer
             LoadData();
         }
 
-        // Wczytanie pliku ze statystykami
+        // Loads statistics file
         private void LoadData()
         {
             Data = stats.LoadStatistics();
@@ -43,7 +43,7 @@ namespace WorkTimer
             }
         }
 
-        // Eksport pliku ze statystkami do formatu CSV
+        // Exports statistics to csv file
         private void ExportStatistics()
         {
             SaveFileDialog exportDialog = new SaveFileDialog();

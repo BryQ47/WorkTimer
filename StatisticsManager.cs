@@ -1,8 +1,8 @@
 ﻿/*
 WorkTimer
-Autor: Marcin Bryk
+Author: Marcin Bryk
 
-Menedżer statystyk
+StatisticsManager class
 */
 
 using System;
@@ -14,8 +14,8 @@ namespace WorkTimer
 {
     public class StatisticsManager
     {
-        private static readonly string STATS_FILE = "WTstats.stat";
-        private static readonly string BACKUP_FILE = "WTstats.bak";
+        private static readonly string STATS_FILE = "ConfigurationFiles\\Stats.wt";
+        private static readonly string BACKUP_FILE = "ConfigurationFiles\\StatsBak.wt";
         private static readonly char[] SEPARATOR = { '\t' };
         public DateTime StartTime { private get; set; }
 
@@ -30,7 +30,7 @@ namespace WorkTimer
             config = configuration;
         }
 
-        // Zapis czasu pracy do pliku ze statystykami
+        // Saves worktime to statistics file
         public void SaveWorkTime(string summary)
         {
             using (var statsFile = new StreamWriter(STATS_FILE, true))
@@ -43,21 +43,21 @@ namespace WorkTimer
             }
         }
 
-        // Zwrócenia podsumowania czasu pracy (suma i średnia czasu pracy)
+        // Returns sum and average of work time
         public string PrepareSummary()
         {
             string status;
-            if (config.ConfDefaultWorkTime > 0)
+            if (config.DefaultWorkTime > 0)
             {
-                int diff = (int)sum.TotalMinutes - config.ConfDefaultWorkTime * data.Count;
+                int diff = (int)sum.TotalMinutes - config.DefaultWorkTime * data.Count;
                 status = "    Status: " + ((diff > 0) ? ("+" + diff) : (diff.ToString())) + "m";
             }
             else
                 status = "";
-            return config.ConfHdrSum + ": " + ParseTimeFull(sum) + "    " + config.ConfHdrAvg + ": " + ParseTimeFull(avg) + status;
+            return config.HdrSum + ": " + ParseTimeFull(sum) + "    " + config.HdrAvg + ": " + ParseTimeFull(avg) + status;
         }
 
-        // Załadowanie pliku ze statystykami
+        // Loads statistics file
         public string LoadStatistics()
         {
             StringBuilder output = new StringBuilder();
@@ -104,12 +104,12 @@ namespace WorkTimer
             return output.ToString();
         }
 
-        // Eksport statystyk do pliku CSV
+        // Exports statistics to csv
         public void ExportStatistics(string exportPath)
         {
             using (var exportFile = new StreamWriter(exportPath))
             {
-                exportFile.WriteLine("\"\",\"" + config.ConfHdrBeginnings + "\",\"" + config.ConfHdrEndings + "\",\"" + config.ConfHdrPeriods + "\",\"" + config.ConfHdrComments + "\"");
+                exportFile.WriteLine("\"\",\"" + config.HdrBeginnings + "\",\"" + config.HdrEndings + "\",\"" + config.HdrTime + "\",\"" + config.HdrComments + "\"");
 
                 int i = 0;
                 foreach (var element in data)
@@ -122,8 +122,8 @@ namespace WorkTimer
                         element.Description + "\"");
                 }
                 exportFile.WriteLine("\"\",\"\",\"\",\"\",\"\"");
-                exportFile.WriteLine("\"" + config.ConfHdrSum + "\",\"" + ParseTimeFull(sum) + "\"");
-                exportFile.WriteLine("\"" + config.ConfHdrAvg + "\",\"" + ParseTimeFull(avg) + "\"");
+                exportFile.WriteLine("\"" + config.HdrSum + "\",\"" + ParseTimeFull(sum) + "\"");
+                exportFile.WriteLine("\"" + config.HdrAvg + "\",\"" + ParseTimeFull(avg) + "\"");
             }
 
             File.Delete(BACKUP_FILE);
@@ -182,12 +182,12 @@ namespace WorkTimer
         }
     }
 
-    // Struktura agregująca dane o pojedynczego wpisu z pliku stat.
+    // Single entry of stats file
     public struct TimeInfo
     {
-        public DateTime Beginning;  // Początek pracy
-        public DateTime End;        // Koniec pracy
-        public TimeSpan Duration;   // Czas pracy
-        public string Description;  // Opis pracy
+        public DateTime Beginning;  // Work beginning
+        public DateTime End;        // Work end
+        public TimeSpan Duration;   // Work time
+        public string Description;  // Work summary
     }
 }
