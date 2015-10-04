@@ -8,6 +8,8 @@ StatisticsController class
 using System.ComponentModel;
 using Microsoft.Win32;
 using System.Windows.Input;
+using System.Collections.Generic;
+using System.Text;
 
 namespace WorkTimer
 {
@@ -33,8 +35,8 @@ namespace WorkTimer
         // Loads statistics file
         private void LoadData()
         {
-            Data = stats.LoadStatistics();
-            Summary = stats.PrepareSummary();
+            Data = ConvertStatsToString(stats.Data);
+            Summary = PrepareSummary();
 
             if (PropertyChanged != null)
             {
@@ -50,6 +52,30 @@ namespace WorkTimer
             exportDialog.DefaultExt = "csv";
             if (exportDialog.ShowDialog() == true)
                 stats.ExportStatistics(exportDialog.FileName);
+        }
+
+        private string ConvertStatsToString(List<TimeInfo> data)
+        {
+            int i = 0;
+            StringBuilder output = new StringBuilder();
+            foreach(var element in data)
+            {
+                output.AppendLine(
+                        (++i).ToString() + ".\t" +
+                        StatisticsManager.ParseDate(element.Beginning) + "    " +
+                        StatisticsManager.ParseDate(element.End) + "    " +
+                        StatisticsManager.ParseTime(element.Duration) + "    " +
+                        element.Description);
+            }
+
+            return output.ToString();
+        }
+
+        private string PrepareSummary()
+        {
+            string status = "    Status: " + ((stats.Difference > 0) ? ("+" + stats.Difference) : (stats.Difference.ToString())) + "m";
+            return stats.SumHeader + ": " + StatisticsManager.ParseTime(stats.Sum) + "    " + stats.AvgHeader + ": " + StatisticsManager.ParseTime(stats.Avg) + status;
+
         }
     }
 }

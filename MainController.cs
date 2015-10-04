@@ -6,6 +6,7 @@ MainController class
 */
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
@@ -38,15 +39,17 @@ namespace WorkTimer
             TxtTime = "00:00";
             displayingNormalMessage = false;
             displayingUrgentMessage = false;
-            counter = new Counter(this);
-            config = new ConfigurationManager(counter, this);
-            stats = new StatisticsManager(config);
             finishButtonCmd = new ButtonCommand(NormalExit, IsButtonActive);
-            configButtonCmd = new ButtonCommand(config.ReloadConfiguration, IsButtonActive);
+            configButtonCmd = new ButtonCommand(LoadConfiguration, IsButtonActive);
             statsButtonCmd = new ButtonCommand(ShowStatistics, IsButtonActive);
             saveButtonCmd = new ButtonCommand(SaveExit, IsButtonActive);
-            config.LoadConfiguration(stats);
-            counter.Start();
+
+            counter = new Counter(this);
+            config = new ConfigurationManager();
+            config.LoadConfiguration();
+            stats = new StatisticsManager(config);
+            ConfigureTimer();
+            counter.Start(config.StartTime);
         }
 
         /* Refreshes displaing time
@@ -87,16 +90,9 @@ namespace WorkTimer
             }
         }
 
-        /* Asks user if he/she wants to continue last session
-         */
-        public bool ContinueCountingMessage()
-        {
-            return (MessageBox.Show("Continue with saved time?", "Time Info", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes);
-        }
-
         /* Sets window taskbar visibility
         */
-        public void setTaskbarVisibilityParam(bool visible)
+        private void SetTaskbarVisibilityParam(bool visible)
         {
             Application.Current.MainWindow.ShowInTaskbar = visible;
         }
@@ -143,6 +139,31 @@ namespace WorkTimer
         private bool IsButtonActive()
         {
             return true; // Buttons always active
+        }
+
+        private void LoadConfiguration()
+        {
+            config.LoadConfiguration();
+            ConfigureTimer();
+        }
+
+
+        private void ConfigureTimer()
+        {
+            // Performing time balance
+            LinkedList<PeriodicMessage> alerts = config.AlertsList;
+            int workTime = config.DefaultWorkTime;
+            if (workTime > 0)
+            {
+                if (config.BalanceOn)
+                {
+                    workTime -= stats.Difference / config.BalanceDays;
+                }
+                alerts.AddLast(new PeriodicMessage(workTime, false, config.OnFinishMsg, PeriodicMessage.MessageType.URGENT));
+            }
+
+            counter.MsgList = alerts;
+            SetTaskbarVisibilityParam(config.VisibleInTaskbar);
         }
     }
 }

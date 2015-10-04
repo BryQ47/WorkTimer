@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Windows;
 
 namespace WorkTimer
 {
@@ -21,9 +22,6 @@ namespace WorkTimer
         private static readonly string TRUE = "true";                           // Value indicating boolean true in configuration files
         private static readonly string FALSE = "false";                         // Value indicating boolean false in configuration files
         private static readonly string NONE = "none";                           // Empty value in program start-time file
-
-        private Counter counter;
-        private MainController mainController;
         private Dictionary<string, string> configVariables;
 
         // Configuration variables
@@ -246,52 +244,37 @@ namespace WorkTimer
             }
         }
 
-        public ConfigurationManager(Counter cnt, MainController v)
+        public DateTime StartTime { get; private set; }
+
+        public LinkedList<PeriodicMessage> AlertsList { get; set; }
+
+        public ConfigurationManager()
         {
-            counter = cnt;
-            mainController = v;
             configVariables = new Dictionary<string, string>();
+            Initialize();
         }
 
-        /* Loads program configuration from configuration files and beginning time of last session (if saved)
+        /* Loads start time
          */
-        public void LoadConfiguration(StatisticsManager statistics)
+        private void Initialize()
         {
             string savedValue = File.ReadAllText(SAVED_TIME_FILE);
-            DateTime startedAt;
 
-            // Loads program start time
-            if (!savedValue.Contains(NONE) && mainController.ContinueCountingMessage())
-            {
-                startedAt = DateTime.Parse(savedValue);
-                TimeSpan dt = DateTime.Now.Subtract(startedAt);
-#if DEBUG
-                counter.Set(dt.Minutes, dt.Seconds);
-#else
-                counter.Set(dt.Hours, dt.Minutes);
-#endif
-            }
+            // Check if there is value saved from last session
+            if (!savedValue.Contains(NONE) && ShowContinueLastSessionMsgBox())
+                StartTime = DateTime.Parse(savedValue);
             else
-            {
-                startedAt = DateTime.Now;
-                counter.Set(0, 0);
-            }
-            statistics.StartTime = startedAt;
-            File.WriteAllText(SAVED_TIME_FILE, startedAt.ToString());
+                StartTime = DateTime.Now;
 
-            // Load remaining configuration elements
-            ReloadConfiguration();
+            File.WriteAllText(SAVED_TIME_FILE, StartTime.ToString());
         }
 
         /* Loads alerts and configuration variables from files
          */
-        public void ReloadConfiguration()
+        public void LoadConfiguration()
         {
             loadConfigVariables();
-            LinkedList<PeriodicMessage> alerts = LoadMessageList();
-            alerts.AddLast(new PeriodicMessage(DefaultWorkTime, false, OnFinishMsg, PeriodicMessage.MessageType.URGENT));
-            counter.MsgList = alerts;
-            mainController.setTaskbarVisibilityParam(VisibleInTaskbar);
+            AlertsList = LoadMessageList();
         }
 
         /* Clears last session saved time
@@ -371,6 +354,11 @@ namespace WorkTimer
             }
 
            return tmplist;
+        }
+
+        private bool ShowContinueLastSessionMsgBox()
+        {
+            return (MessageBox.Show("Continue with saved time?", "Time Info", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes);
         }
     }
 }

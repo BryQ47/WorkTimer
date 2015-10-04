@@ -61,20 +61,19 @@ namespace WorkTimer
             systemTimer.Elapsed += TimerEventHandler;
         }
 
-        /* Sets counter initial value
-         * Should not be used on running counter
-         */
-        public void Set(int hh, int mm)
-        {
-            hour = hh;
-            min = mm;
-            counterValue = hh*60+mm;
-        }
-
-        /* Starts counter
+        /* Starts counter with specific time
         */
-        public void Start()
+        public void Start(DateTime startTime)
         {
+            TimeSpan dt = DateTime.Now.Subtract(startTime);
+#if DEBUG
+            hour = dt.Minutes;
+            min = dt.Seconds;
+#else
+            hour = dt.Hours;
+            min = dt.Minutes;
+#endif
+            counterValue = hour * 60 + min;
             systemTimer.Start();
             view.UpdateTimeView(hour, min);
         }

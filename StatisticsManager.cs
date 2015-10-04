@@ -17,17 +17,21 @@ namespace WorkTimer
         private static readonly string STATS_FILE = "ConfigurationFiles\\Stats.wt";
         private static readonly string BACKUP_FILE = "ConfigurationFiles\\StatsBak.wt";
         private static readonly char[] SEPARATOR = { '\t' };
-        public DateTime StartTime { private get; set; }
-
-        private List<TimeInfo> data;
         private ConfigurationManager config;
-        private TimeSpan sum;
-        private TimeSpan avg;
+
+        public List<TimeInfo> Data { get; private set; }
+        public TimeSpan Sum { get; private set; }
+        public TimeSpan Avg { get; private set; }
+        public int Difference { get; private set; }
+        public string[] ColumnHeaders { get; private set; }
+        public string SumHeader { get; private set; }
+        public string AvgHeader { get; private set; }
 
         public StatisticsManager(ConfigurationManager configuration)
         {
-            data = new List<TimeInfo>();
+            Data = new List<TimeInfo>();
             config = configuration;
+            LoadStatistics();
         }
 
         // Saves worktime to statistics file
@@ -36,40 +40,25 @@ namespace WorkTimer
             using (var statsFile = new StreamWriter(STATS_FILE, true))
             {
                 statsFile.WriteLine(
-                    StartTime.ToString() + SEPARATOR[0]
+                    config.StartTime.ToString() + SEPARATOR[0]
                     + DateTime.Now.ToString() + SEPARATOR[0]
-                    + DateTime.Now.Subtract(StartTime).ToString() + SEPARATOR[0]
+                    + DateTime.Now.Subtract(config.StartTime).ToString() + SEPARATOR[0]
                     + summary);
             }
         }
 
-        // Returns sum and average of work time
-        public string PrepareSummary()
-        {
-            string status;
-            if (config.DefaultWorkTime > 0)
-            {
-                int diff = (int)sum.TotalMinutes - config.DefaultWorkTime * data.Count;
-                status = "    Status: " + ((diff > 0) ? ("+" + diff) : (diff.ToString())) + "m";
-            }
-            else
-                status = "";
-            return config.HdrSum + ": " + ParseTimeFull(sum) + "    " + config.HdrAvg + ": " + ParseTimeFull(avg) + status;
-        }
-
         // Loads statistics file
-        public string LoadStatistics()
+        private void LoadStatistics()
         {
-            StringBuilder output = new StringBuilder();
-
-            data.Clear();
+            Data.Clear();
 
             using (var statsFile = new StreamReader(STATS_FILE))
             {
                 TimeInfo sample;
                 string line;
                 string[] lineContent;
-                int i = 0;
+                Sum = TimeSpan.Zero;
+                Avg = TimeSpan.Zero;
 
                 while ((line = statsFile.ReadLine()) != null)
                 {
@@ -78,30 +67,24 @@ namespace WorkTimer
                     sample.End = DateTime.Parse(lineContent[1]);
                     sample.Duration = TimeSpan.Parse(lineContent[2]);
                     sample.Description = lineContent[3];
-                    data.Add(sample);
+                    Data.Add(sample);
 
-                    output.AppendLine(
-                        (++i).ToString() + ".\t" +
-                        ParseDate(sample.Beginning) + "    " +
-                        ParseDate(sample.End) + "    " +
-                        ParseTime(sample.Duration)+ "    " +
-                        sample.Description);
+                    Sum += sample.Duration;
                 }
             }
 
-            sum = TimeSpan.Zero;
+            if (Data.Count != 0)
+                Avg = TimeSpan.FromSeconds(Sum.TotalSeconds / Data.Count);
 
-            foreach (var element in data)
-            {
-                sum += element.Duration;
-            }
+            Difference = (int)Sum.TotalMinutes - config.DefaultWorkTime * Data.Count;
 
-            if (data.Count != 0)
-                avg = TimeSpan.FromSeconds(sum.TotalSeconds / data.Count);
-            else
-                avg = TimeSpan.Zero;
-
-            return output.ToString();
+            ColumnHeaders = new string[4];
+            ColumnHeaders[0] = config.HdrBeginnings;
+            ColumnHeaders[1] = config.HdrEndings;
+            ColumnHeaders[2] = config.HdrTime;
+            ColumnHeaders[3] = config.HdrComments;
+            SumHeader = config.HdrSum;
+            AvgHeader = config.HdrAvg;
         }
 
         // Exports statistics to csv
@@ -109,10 +92,14 @@ namespace WorkTimer
         {
             using (var exportFile = new StreamWriter(exportPath))
             {
-                exportFile.WriteLine("\"\",\"" + config.HdrBeginnings + "\",\"" + config.HdrEndings + "\",\"" + config.HdrTime + "\",\"" + config.HdrComments + "\"");
+
+                exportFile.Write("\"");
+                foreach (var hdr in ColumnHeaders)
+                    exportFile.Write("\",\"" + hdr);
+                exportFile.WriteLine("\"");
 
                 int i = 0;
-                foreach (var element in data)
+                foreach (var element in Data)
                 {
                     exportFile.WriteLine(
                         "\"" + (++i).ToString() + "\",\"" +
@@ -122,10 +109,11 @@ namespace WorkTimer
                         element.Description + "\"");
                 }
                 exportFile.WriteLine("\"\",\"\",\"\",\"\",\"\"");
-                exportFile.WriteLine("\"" + config.HdrSum + "\",\"" + ParseTimeFull(sum) + "\"");
-                exportFile.WriteLine("\"" + config.HdrAvg + "\",\"" + ParseTimeFull(avg) + "\"");
+                exportFile.WriteLine("\"" + SumHeader + "\",\"" + ParseTimeFull(Sum) + "\"");
+                exportFile.WriteLine("\"" + AvgHeader + "\",\"" + ParseTimeFull(Avg) + "\"");
             }
 
+            
             File.Delete(BACKUP_FILE);
             File.Move(STATS_FILE, BACKUP_FILE);
             using (var statsFile = new StreamWriter(STATS_FILE))
@@ -134,7 +122,7 @@ namespace WorkTimer
             }
         }
 
-        private string ParseDate(DateTime dt)
+        static public string ParseDate(DateTime dt)
         {
             StringBuilder s = new StringBuilder();
             if (dt.Day < 10)
@@ -153,7 +141,7 @@ namespace WorkTimer
             return s.ToString();
         }
 
-        private string ParseTime(TimeSpan ts)
+        static public string ParseTime(TimeSpan ts)
         {
             StringBuilder s = new StringBuilder();
             int hours = ts.Hours + 24*ts.Days;
@@ -169,7 +157,7 @@ namespace WorkTimer
             return s.ToString();
         }
 
-        private string ParseTimeFull(TimeSpan ts)
+        static public string ParseTimeFull(TimeSpan ts)
         {
             StringBuilder s = new StringBuilder();
             int hours = ts.Hours + 24 * ts.Days;
