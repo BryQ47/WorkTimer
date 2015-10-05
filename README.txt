@@ -1,7 +1,31 @@
 ﻿I. Introduction
 
+WorkTimer is a program monitoring work time. It allows to displays periodic alerts and gather information about work time.
+
 
 II. Interface
+
+Program interface consists of 2 views:
+
+1. Main view, which includes:
+
+- Current work time (hh:mm) preview.
+
+- Finish button  - allows finishes program and allows for saving information about work time.
+
+- Save button - closes program and allows to continue with start time of last session when opened again.
+
+- Stats button - shows statistics view.
+
+- Config button - reloads program configuration form configuration files.
+
+2. Statistics view, which includes:
+
+- Stored work time information (beginning, ending, time, description).
+
+- Export button - export work time information to csv file.
+
+- OK button - closes this view. 
 
 
 III. Configuration files
@@ -64,3 +88,16 @@ Settings description (Setting number. Connected configuration variable [value ty
 16. SummariesEnabled ['true' or 'false'] - if set to 'true' enables saving work descriptions after finishing work.
 
 17. VisibleInTaskbar ['true' or 'false'] - if set to 'true' program is visible in taskbar.
+
+
+V. Alerts configuration
+
+WorkTimer alerts are defined in Alerts.wt configuration file.
+Files consists of additional alerts definitions in separate lines. Each consists of 4 values separated by tabulation character:
+1. Is alert active or not - can be only 'true' or 'false'.
+2. Time after which alert will be shown (if active) - can be olny positive integer number.
+3. Determines if alert will be repeated after first period expires - can be only 'true' or 'false'.
+4. Contains alert message text - can be any text (not containing tabulations).
+
+First line in file is ignored. 
+Alerts definitions are ordered in ascending priority.
