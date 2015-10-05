@@ -90,7 +90,7 @@ namespace WorkTimer
         // Exports statistics to csv
         public void ExportStatistics(string exportPath)
         {
-            using (var exportFile = new StreamWriter(exportPath))
+            using (var exportFile = new StreamWriter(exportPath, false, Encoding.UTF8))
             {
 
                 exportFile.Write("\"");

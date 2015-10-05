@@ -29,7 +29,7 @@ namespace WorkTimer
         {
             get
             {
-                return (configVariables["FinishAdditionalInfoEnabled"] == TRUE);
+                return (configVariables["FinishAdditionalInfoEnabled"].ToLower().Contains(TRUE));
             }
             set
             {
@@ -80,7 +80,7 @@ namespace WorkTimer
         {
             get
             {
-                return (configVariables["SummariesEnabled"] == TRUE);
+                return (configVariables["SummariesEnabled"].ToLower().Contains(TRUE));
             }
             set
             {
@@ -95,7 +95,7 @@ namespace WorkTimer
         {
             get
             {
-                return (configVariables["VisibleInTaskbar"] == TRUE);
+                return (configVariables["VisibleInTaskbar"].ToLower().Contains(TRUE));
             }
             set
             {
@@ -110,7 +110,7 @@ namespace WorkTimer
         {
             get
             {
-                return (configVariables["StatsEnables"] == TRUE);
+                return (configVariables["StatsEnables"].ToLower().Contains(TRUE));
             }
             set
             {
@@ -221,7 +221,7 @@ namespace WorkTimer
         {
             get
             {
-                return (configVariables["BalanceOn"] == TRUE);
+                return (configVariables["BalanceOn"].ToLower().Contains(TRUE));
             }
             set
             {

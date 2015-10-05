@@ -48,8 +48,9 @@ namespace WorkTimer
             config = new ConfigurationManager();
             config.LoadConfiguration();
             stats = new StatisticsManager(config);
+            counter.Set(config.StartTime);
             ConfigureTimer();
-            counter.Start(config.StartTime);
+            counter.Start();
         }
 
         /* Refreshes displaing time
@@ -153,14 +154,10 @@ namespace WorkTimer
             // Performing time balance
             LinkedList<PeriodicMessage> alerts = config.AlertsList;
             int workTime = config.DefaultWorkTime;
+            if (config.BalanceOn)
+                workTime -= stats.Difference / config.BalanceDays;
             if (workTime > 0)
-            {
-                if (config.BalanceOn)
-                {
-                    workTime -= stats.Difference / config.BalanceDays;
-                }
                 alerts.AddLast(new PeriodicMessage(workTime, false, config.OnFinishMsg, PeriodicMessage.MessageType.URGENT));
-            }
 
             counter.MsgList = alerts;
             SetTaskbarVisibilityParam(config.VisibleInTaskbar);

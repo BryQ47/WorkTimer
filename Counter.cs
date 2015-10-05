@@ -61,9 +61,7 @@ namespace WorkTimer
             systemTimer.Elapsed += TimerEventHandler;
         }
 
-        /* Starts counter with specific time
-        */
-        public void Start(DateTime startTime)
+        public void Set(DateTime startTime)
         {
             TimeSpan dt = DateTime.Now.Subtract(startTime);
 #if DEBUG
@@ -74,6 +72,13 @@ namespace WorkTimer
             min = dt.Minutes;
 #endif
             counterValue = hour * 60 + min;
+        }
+
+        /* Starts counter with specific time
+        */
+        public void Start()
+        {
+
             systemTimer.Start();
             view.UpdateTimeView(hour, min);
         }
