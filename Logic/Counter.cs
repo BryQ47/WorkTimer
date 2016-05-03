@@ -1,15 +1,9 @@
-﻿/*
-WorkTimer
-Author: Marcin Bryk
-
-Counter class
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Timers;
+using WorkTimer.ViewModels;
 
-namespace WorkTimer
+namespace WorkTimer.Logic
 {
     public class Counter
     {
@@ -20,7 +14,7 @@ namespace WorkTimer
         private static readonly int MINUTE_INTERVAL = 60000;
 #endif
 
-        private MainController view;
+        private MainViewModel view;
         private Timer systemTimer;
         private int hour;
         private int min;
@@ -53,7 +47,7 @@ namespace WorkTimer
             } 
         }
 
-        public Counter(MainController cv)
+        public Counter(MainViewModel cv)
         {
             view = cv;
             valueLocker = new object();

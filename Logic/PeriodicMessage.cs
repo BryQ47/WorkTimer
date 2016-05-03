@@ -1,11 +1,4 @@
-﻿/*
-WorkTimer
-Author: Marcin Bryk
-
-PeriodicMessage class
-*/
-
-namespace WorkTimer
+﻿namespace WorkTimer.Logic
 {
     public class PeriodicMessage
     {

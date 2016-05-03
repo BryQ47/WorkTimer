@@ -1,19 +1,14 @@
-﻿/*
-WorkTimer
-Author: Marcin Bryk
-
-StatisticsController class
-*/
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using Microsoft.Win32;
 using System.Windows.Input;
 using System.Collections.Generic;
 using System.Text;
+using WorkTimer.Helpers;
+using WorkTimer.Logic;
 
-namespace WorkTimer
+namespace WorkTimer.ViewModels
 {
-    public class StatisticsController : INotifyPropertyChanged
+    public class StatsViewModel : INotifyPropertyChanged
     {
         public string Data { get; private set; }
         public string Summary { get; private set; }
@@ -25,7 +20,7 @@ namespace WorkTimer
 
         private StatisticsManager stats;
 
-        public StatisticsController(StatisticsManager s)
+        public StatsViewModel(StatisticsManager s)
         {
             statsExportCmd = new ButtonCommand(ExportStatistics, ()=>true);
             stats = s;

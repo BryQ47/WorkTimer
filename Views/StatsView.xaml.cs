@@ -11,22 +11,24 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using WorkTimer.Logic;
+using WorkTimer.ViewModels;
 
-namespace WorkTimer
+namespace WorkTimer.Views
 {
     /// <summary>
     /// Interaction logic for StatisticsWindow.xaml
     /// </summary>
-    public partial class StatisticsWindow : Window
+    public partial class StatsView : Window
     {
-        public StatisticsController WindowController
+        public StatsViewModel WindowController
         {
             get; set;
         }
 
-        public StatisticsWindow(StatisticsManager stats)
+        public StatsView(StatisticsManager stats)
         {
-            WindowController = new StatisticsController(stats);
+            WindowController = new StatsViewModel(stats);
             InitializeComponent();
         }
     }

@@ -1,19 +1,15 @@
-﻿/*
-WorkTimer
-Author: Marcin Bryk
-
-MainController class
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using WorkTimer.Logic;
+using WorkTimer.Helpers;
+using WorkTimer.Views;
 
-namespace WorkTimer
+namespace WorkTimer.ViewModels
 {
-    public class MainController : INotifyPropertyChanged
+    public class MainViewModel : INotifyPropertyChanged
     {
         private Counter counter;
         private ConfigurationManager config;
@@ -34,7 +30,7 @@ namespace WorkTimer
         public ICommand configBtnClick { get { return configButtonCmd; } }
         public ICommand saveBtnClick { get { return saveButtonCmd; } }
 
-        public MainController()
+        public MainViewModel()
         {
             TxtTime = "00:00";
             displayingNormalMessage = false;
@@ -133,7 +129,7 @@ namespace WorkTimer
         */
         private void ShowStatistics()
         {
-            var statsView = new StatisticsWindow(stats);
+            var statsView = new StatsView(stats);
             statsView.ShowDialog();
         }
 

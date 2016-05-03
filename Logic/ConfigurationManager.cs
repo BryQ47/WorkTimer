@@ -1,17 +1,10 @@
-﻿/*
-WorkTimer
-Author: Marcin Bryk
-
-ConfigurationManager class
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Windows;
 
-namespace WorkTimer
+namespace WorkTimer.Logic
 {
     public class ConfigurationManager
     {

@@ -1,14 +1,7 @@
-﻿/*
-WorkTimer
-Author: Marcin Bryk
-
-ButtonCommand class
-*/
-
-using System;
+﻿using System;
 using System.Windows.Input;
 
-namespace WorkTimer
+namespace WorkTimer.Helpers
 {
     public class ButtonCommand : ICommand
     {
