@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Timers;
-using WorkTimer.ViewModels;
+using WorkTimer.Models;
 
 namespace WorkTimer.Logic
 {
-    public class Counter
+    class Counter
     {
 
 #if DEBUG
@@ -14,105 +14,66 @@ namespace WorkTimer.Logic
         private static readonly int MINUTE_INTERVAL = 60000;
 #endif
 
-        private MainViewModel view;
         private Timer systemTimer;
-        private int hour;
-        private int min;
-        private int counterValue;
-        private readonly object valueLocker;
-        public LinkedList<PeriodicMessage> _msgList; 
+        private int minutesCount;
+        private Action<int> TimeUpdateCallback;
+        private Action<Alert> DisplayAlertCallback;
+        private LinkedList<Alert> alertsList;
 
-        public LinkedList<PeriodicMessage> MsgList 
-        { 
-            private get
-            {
-                return _msgList;
-            } 
-            set
-            {
-                lock(valueLocker)
-                {
-                    _msgList = value;
-                    LinkedListNode<PeriodicMessage> node = _msgList.First;
-                    LinkedListNode<PeriodicMessage> next;
-            
-                    while(node != null)
-                    {
-                        next = node.Next;
-                        if (!node.Value.Repeat && node.Value.Period <= counterValue)
-                            _msgList.Remove(node);
-                        node = next;
-                    }
-                }
-            } 
-        }
-
-        public Counter(MainViewModel cv)
+        public Counter(Action<int> timeUpdateCallback, Action<Alert> displayAlertCallback)
         {
-            view = cv;
-            valueLocker = new object();
+            TimeUpdateCallback = timeUpdateCallback;
+            DisplayAlertCallback = displayAlertCallback;
             systemTimer = new Timer(MINUTE_INTERVAL);
             systemTimer.Elapsed += TimerEventHandler;
+            alertsList = new LinkedList<Alert>();
         }
 
         public void Set(DateTime startTime)
         {
             TimeSpan dt = DateTime.Now.Subtract(startTime);
 #if DEBUG
-            hour = dt.Minutes;
-            min = dt.Seconds;
+            minutesCount = dt.Minutes * 60 + dt.Seconds;
 #else
-            hour = dt.Hours;
-            min = dt.Minutes;
+            minutesCount = dt.Hours * 60 + dt.Minutes;
 #endif
-            counterValue = hour * 60 + min;
         }
 
-        /* Starts counter with specific time
-        */
+        public void SetAlerts(LinkedList<Alert> alerts)
+        {
+            alertsList = alerts;
+        }
+
         public void Start()
         {
 
             systemTimer.Start();
-            view.UpdateTimeView(hour, min);
+            TimeUpdateCallback(minutesCount);
         }
 
-        /* Timer event handler
-         */
         private void TimerEventHandler(Object source, ElapsedEventArgs e)
         {
-            lock (valueLocker)
-            {
-                ++counterValue;
-            }
+            ++minutesCount;
+            TimeUpdateCallback(minutesCount);
 
-            if(++min == 60)
-            {
-                min = 0;
-                ++hour;
-            }
-            view.UpdateTimeView(hour, min);
-
-            PeriodicMessage tmpmsg = null;
-            var tmpList = MsgList;
-            LinkedListNode<PeriodicMessage> node = tmpList.First;
-            LinkedListNode<PeriodicMessage> next;
+            Alert activatedAlert = null;
+            var alerts = alertsList;
+            LinkedListNode<Alert> node = alerts.First;
+            LinkedListNode<Alert> next;
             
             while(node != null)
             {
                 next = node.Next;
-                if (counterValue % node.Value.Period == 0)
-                {
-                    tmpmsg = node.Value;
-                    node.Value.Count = counterValue / node.Value.Period;
-                    if (!node.Value.Repeat)
-                        tmpList.Remove(node);
-                }
+
+                if (!node.Value.Repeat && node.Value.Period < minutesCount)
+                    alerts.Remove(node);
+                else if (minutesCount % node.Value.Period == 0)
+                    activatedAlert = node.Value;
                 node = next;
             }
 
-            if(tmpmsg != null)
-                view.DisplayPeriodicMessage(tmpmsg);
+            if(activatedAlert != null)
+                DisplayAlertCallback(activatedAlert);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Windows;
+using WorkTimer.Models;
 
 namespace WorkTimer.Logic
 {
@@ -239,7 +240,7 @@ namespace WorkTimer.Logic
 
         public DateTime StartTime { get; private set; }
 
-        public LinkedList<PeriodicMessage> AlertsList { get; set; }
+        public LinkedList<Alert> AlertsList { get; set; }
 
         public ConfigurationManager()
         {
@@ -328,9 +329,9 @@ namespace WorkTimer.Logic
 
         /* Loads alerts list form file
          */
-        private LinkedList<PeriodicMessage> LoadMessageList()
+        private LinkedList<Alert> LoadMessageList()
         {
-            LinkedList<PeriodicMessage> tmplist = new LinkedList<PeriodicMessage>();
+            LinkedList<Alert> tmplist = new LinkedList<Alert>();
             string[] lines = File.ReadAllLines(ALERTS_FILE, Encoding.Unicode);
             string[] lineContent;
 
@@ -342,7 +343,7 @@ namespace WorkTimer.Logic
                     int period = Convert.ToInt32(lineContent[1]);
                     bool repeat = (lineContent[2].Contains(TRUE)) ? true : false;
                     string msgtxt = lineContent[3];
-                    tmplist.AddLast(new PeriodicMessage(period, repeat, msgtxt, PeriodicMessage.MessageType.NORMAL));
+                    tmplist.AddLast(new Alert(period, repeat, msgtxt, Alert.MessageType.NORMAL));
                 }
             }
 

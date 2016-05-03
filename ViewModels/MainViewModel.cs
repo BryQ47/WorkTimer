@@ -6,10 +6,11 @@ using System.Windows.Input;
 using WorkTimer.Logic;
 using WorkTimer.Helpers;
 using WorkTimer.Views;
+using WorkTimer.Models;
 
 namespace WorkTimer.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    class MainViewModel : INotifyPropertyChanged
     {
         private Counter counter;
         private ConfigurationManager config;
@@ -22,6 +23,7 @@ namespace WorkTimer.ViewModels
         private volatile bool displayingUrgentMessage;
 
         public string TxtTime { get; private set; }
+        public bool VisibleInTaskbar { get; private set; }
         public event PropertyChangedEventHandler PropertyChanged;
 
         // Commands' properties
@@ -40,7 +42,7 @@ namespace WorkTimer.ViewModels
             statsButtonCmd = new ButtonCommand(ShowStatistics, IsButtonActive);
             saveButtonCmd = new ButtonCommand(SaveExit, IsButtonActive);
 
-            counter = new Counter(this);
+            counter = new Counter(UpdateTimeView, DisplayAlert);
             config = new ConfigurationManager();
             config.LoadConfiguration();
             stats = new StatisticsManager(config);
@@ -51,9 +53,11 @@ namespace WorkTimer.ViewModels
 
         /* Refreshes displaing time
         */
-        public void UpdateTimeView(int hour, int minute)
+        public void UpdateTimeView(int minutes)
         {
-            TxtTime = String.Format("{0:D2}:{1:D2}", hour, minute);
+            int hh = minutes / 60;
+            int mm = minutes - 60 * hh;
+            TxtTime = String.Format("{0:D2}:{1:D2}", hh, mm);
             if (PropertyChanged != null)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs("TxtTime"));
@@ -62,17 +66,15 @@ namespace WorkTimer.ViewModels
 
         /* Shows periodic alert
         */
-        public void DisplayPeriodicMessage(PeriodicMessage msg)
+        public void DisplayAlert(Alert msg)
         {
-            string txt = (msg.Repeat) ? string.Format("{0} ({1})", msg.Text, msg.Count) : msg.Text;
-
-            if (msg.Type == PeriodicMessage.MessageType.NORMAL)
+            if (msg.Type == Alert.MessageType.NORMAL)
             {
                 if(!displayingNormalMessage && !displayingUrgentMessage)
                 {
                     displayingNormalMessage = true;
                     
-                    MessageBox.Show(txt, "Time Info", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                    MessageBox.Show(msg.Text, "Time Info", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                     displayingNormalMessage = false;
                 }
             }
@@ -81,7 +83,7 @@ namespace WorkTimer.ViewModels
                 if (!displayingUrgentMessage)
                 {
                     displayingUrgentMessage = true;
-                    MessageBox.Show(txt + config.GetAdditionalFinishInfo(), "Time Info", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                    MessageBox.Show(msg.Text + config.GetAdditionalFinishInfo(), "Time Info", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                     displayingUrgentMessage = false;
                 }
             }
@@ -91,7 +93,7 @@ namespace WorkTimer.ViewModels
         */
         private void SetTaskbarVisibilityParam(bool visible)
         {
-            Application.Current.MainWindow.ShowInTaskbar = visible;
+            VisibleInTaskbar = visible;
         }
 
         /* Closes application:
@@ -148,14 +150,14 @@ namespace WorkTimer.ViewModels
         private void ConfigureTimer()
         {
             // Performing time balance
-            LinkedList<PeriodicMessage> alerts = config.AlertsList;
+            LinkedList<Alert> alerts = config.AlertsList;
             int workTime = config.DefaultWorkTime;
             if (config.BalanceOn)
                 workTime -= stats.Difference / config.BalanceDays;
             if (workTime > 0)
-                alerts.AddLast(new PeriodicMessage(workTime, false, config.OnFinishMsg, PeriodicMessage.MessageType.URGENT));
+                alerts.AddLast(new Alert(workTime, false, config.OnFinishMsg, Alert.MessageType.URGENT));
 
-            counter.MsgList = alerts;
+            counter.SetAlerts(alerts);
             SetTaskbarVisibilityParam(config.VisibleInTaskbar);
         }
     }

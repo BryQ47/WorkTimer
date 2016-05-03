@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace WorkTimer.Helpers
 {
-    public class ButtonCommand : ICommand
+    class ButtonCommand : ICommand
     {
         private Action WhattoExecute;
         private Func<bool> WhentoExecute;
