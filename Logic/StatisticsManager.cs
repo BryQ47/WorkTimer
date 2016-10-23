@@ -7,43 +7,63 @@ namespace WorkTimer.Logic
 {
     public class StatisticsManager
     {
-        private static readonly string STATS_FILE = "ConfigurationFiles\\Stats.wt";
-        private static readonly string BACKUP_FILE = "ConfigurationFiles\\StatsBak.wt";
+        private static readonly string STATS_FILE = "ConfigurationFiles\\Stats.txt";
+        private static readonly string BACKUP_FILE = "ConfigurationFiles\\StatsBak.txt";
         private static readonly char[] SEPARATOR = { '\t' };
-        private ConfigurationManager config;
 
         public List<TimeInfo> Data { get; private set; }
         public TimeSpan Sum { get; private set; }
         public TimeSpan Avg { get; private set; }
         public int Difference { get; private set; }
-        public string[] ColumnHeaders { get; private set; }
-        public string SumHeader { get; private set; }
-        public string AvgHeader { get; private set; }
+        //public string[] columnHeaders { get; private set; }
+        //public string sumHeader { get; private set; }
+        //public string avgHeader { get; private set; }
 
-        public StatisticsManager(ConfigurationManager configuration)
+        private enum Hdr { Beginnings, Endings, Time, Comments, Sum, Avg };
+
+        //private Dictionary<Hdr, string> _headers = new Dictionary<Hdr, string>();
+
+        private Dictionary<Hdr, string> LoadHeaders()
+        {
+            var hdrsTmp = new Dictionary<string, string>();
+
+            try
+            {
+                if (File.Exists("ConfigurationFiles\\StatsHeaders.txt"))
+                {
+                    string[] lines = File.ReadAllLines("ConfigurationFiles\\StatsHeaders.txt", Encoding.UTF8);
+                    string[] lineContent;
+                    char[] separators = new char[] { '=' };
+
+                    for (int i = 0; i < lines.Length; ++i)
+                    {
+                        lineContent = lines[i].Split(separators, StringSplitOptions.None);
+                        if (!string.IsNullOrWhiteSpace(lineContent[1]))
+                            hdrsTmp[lineContent[0]] = lineContent[1];
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            var hdrs = new Dictionary<Hdr, string>();
+
+            Action<Hdr, string, string> loadHdr = (hdrType, hdrName, hdrDefaultContent) => { hdrs[hdrType] = hdrsTmp.ContainsKey(hdrName) ? hdrsTmp[hdrName] : hdrDefaultContent; };
+            loadHdr(Hdr.Beginnings, "StatsBeginningsHeader", "Beginning");
+            loadHdr(Hdr.Endings, "StatsEndingsHeader", "Ending");
+            loadHdr(Hdr.Time, "StatsTimeHeader", "Time");
+            loadHdr(Hdr.Comments, "StatsCommentsHeader", "Description");
+            loadHdr(Hdr.Sum, "StatsSumHeader", "Sum");
+            loadHdr(Hdr.Avg, "StatsAverageHeader", "Average");
+
+            return hdrs;
+        }
+
+        public StatisticsManager(int defaultWorkTime)
         {
             Data = new List<TimeInfo>();
-            config = configuration;
-            LoadStatistics();
-        }
-
-        // Saves worktime to statistics file
-        public void SaveWorkTime(string summary)
-        {
-            using (var statsFile = new StreamWriter(STATS_FILE, true))
-            {
-                statsFile.WriteLine(
-                    config.StartTime.ToString() + SEPARATOR[0]
-                    + DateTime.Now.ToString() + SEPARATOR[0]
-                    + DateTime.Now.Subtract(config.StartTime).ToString() + SEPARATOR[0]
-                    + summary);
-            }
-        }
-
-        // Loads statistics file
-        private void LoadStatistics()
-        {
-            Data.Clear();
 
             using (var statsFile = new StreamReader(STATS_FILE))
             {
@@ -69,26 +89,43 @@ namespace WorkTimer.Logic
             if (Data.Count != 0)
                 Avg = TimeSpan.FromSeconds(Sum.TotalSeconds / Data.Count);
 
-            Difference = (int)Sum.TotalMinutes - config.DefaultWorkTime * Data.Count;
+            Difference = (int)Sum.TotalMinutes - defaultWorkTime * Data.Count;
+        }
 
-            ColumnHeaders = new string[4];
-            ColumnHeaders[0] = config.HdrBeginnings;
-            ColumnHeaders[1] = config.HdrEndings;
-            ColumnHeaders[2] = config.HdrTime;
-            ColumnHeaders[3] = config.HdrComments;
-            SumHeader = config.HdrSum;
-            AvgHeader = config.HdrAvg;
+        // Saves worktime to statistics file
+        public void SaveWorkTime(DateTime startTime, string summary)
+        {
+            using (var statsFile = new StreamWriter(STATS_FILE, true))
+            {
+                statsFile.WriteLine(
+                    startTime.ToString() + SEPARATOR[0]
+                    + DateTime.Now.ToString() + SEPARATOR[0]
+                    + DateTime.Now.Subtract(startTime).ToString() + SEPARATOR[0]
+                    + summary);
+            }
         }
 
         // Exports statistics to csv
         public void ExportStatistics(string exportPath)
         {
+            var hdrs = LoadHeaders();
+            var columnHeaders = new string[4];
+            columnHeaders[0] = hdrs[Hdr.Beginnings];
+            columnHeaders[1] = hdrs[Hdr.Endings];
+            columnHeaders[2] = hdrs[Hdr.Time];
+            columnHeaders[3] = hdrs[Hdr.Comments];
+
+
             using (var exportFile = new StreamWriter(exportPath, false, Encoding.UTF8))
             {
 
                 exportFile.Write("\"");
-                foreach (var hdr in ColumnHeaders)
-                    exportFile.Write("\",\"" + hdr);
+
+                exportFile.Write("\",\"" + hdrs[Hdr.Beginnings]);
+                exportFile.Write("\",\"" + hdrs[Hdr.Endings]);
+                exportFile.Write("\",\"" + hdrs[Hdr.Time]);
+                exportFile.Write("\",\"" + hdrs[Hdr.Comments]);
+
                 exportFile.WriteLine("\"");
 
                 int i = 0;
@@ -102,8 +139,8 @@ namespace WorkTimer.Logic
                         element.Description + "\"");
                 }
                 exportFile.WriteLine("\"\",\"\",\"\",\"\",\"\"");
-                exportFile.WriteLine("\"" + SumHeader + "\",\"" + ParseTimeFull(Sum) + "\"");
-                exportFile.WriteLine("\"" + AvgHeader + "\",\"" + ParseTimeFull(Avg) + "\"");
+                exportFile.WriteLine("\"" + hdrs[Hdr.Sum] + "\",\"" + ParseTimeFull(Sum) + "\"");
+                exportFile.WriteLine("\"" + hdrs[Hdr.Avg] + "\",\"" + ParseTimeFull(Avg) + "\"");
             }
 
             

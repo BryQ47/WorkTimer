@@ -1,0 +1,6 @@
+﻿StatsBeginningsHeader=Poczatek
+StatsEndingsHeader=Koniec
+StatsTimeHeader=Czas(hh:mm)
+StatsCommentsHeader=Opis
+StatsSumHeader=Suma
+StatsAverageHeader=Srednio

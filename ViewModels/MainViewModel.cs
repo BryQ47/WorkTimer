@@ -37,16 +37,16 @@ namespace WorkTimer.ViewModels
             TxtTime = "00:00";
             displayingNormalMessage = false;
             displayingUrgentMessage = false;
-            finishButtonCmd = new ButtonCommand(NormalExit, IsButtonActive);
-            configButtonCmd = new ButtonCommand(LoadConfiguration, IsButtonActive);
-            statsButtonCmd = new ButtonCommand(ShowStatistics, IsButtonActive);
-            saveButtonCmd = new ButtonCommand(SaveExit, IsButtonActive);
+
+            var isButtonActive = new Func<bool>(() => true);
+            finishButtonCmd = new ButtonCommand(NormalExit, isButtonActive);
+            configButtonCmd = new ButtonCommand(LoadConfiguration, isButtonActive);
+            statsButtonCmd = new ButtonCommand(ShowStatistics, isButtonActive);
+            saveButtonCmd = new ButtonCommand(SaveExit, isButtonActive);
 
             config = new ConfigurationManager();
 
             LoadConfiguration();
-
-            stats = new StatisticsManager(config);
         }
 
         /* Refreshes displaing time
@@ -79,7 +79,7 @@ namespace WorkTimer.ViewModels
                 if (!displayingUrgentMessage)
                 {
                     displayingUrgentMessage = true;
-                    MessageBox.Show(msg.Text + config.GetAdditionalFinishInfo(), "Time Info", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                    MessageBox.Show(msg.Text, "Time Info", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                     displayingUrgentMessage = false;
                 }
             }
@@ -101,16 +101,16 @@ namespace WorkTimer.ViewModels
             bool shutdown = true;
             config.ClearSavedTime();
 
-            if (config.StatsEnabled)
+            if (config.GatherStatistics)
             {
-                if (config.SummariesEnabled)
+                if (config.GatherSummaries)
                 {
                     SummaryDialog summaryDialog = new SummaryDialog();
                     shutdown = (bool)summaryDialog.ShowDialog();
                     summary = summaryDialog.Summary;
                 }
                 if(shutdown)
-                    stats.SaveWorkTime(summary);
+                    stats.SaveWorkTime(config.StartTime, summary);
             }
             if(shutdown)
                 Application.Current.Shutdown();
@@ -131,24 +131,19 @@ namespace WorkTimer.ViewModels
             statsView.ShowDialog();
         }
 
-        private bool IsButtonActive()
-        {
-            return true; // Buttons always active
-        }
-
         private void LoadConfiguration()
         {
-            config.LoadConfiguration();
+            stats = new StatisticsManager(config.DefaultWorkTime);
 
             SetTaskbarVisibilityParam(config.VisibleInTaskbar);
 
             // Performing time balance
-            LinkedList<Alert> alerts = config.AlertsList;
-            int workTime = config.DefaultWorkTime;
+            LinkedList<Alert> alerts = config.LoadAlerts();
+            int workTime = config.DefaultWorkTime - config.AdditionalTime;
             if (config.BalanceOn)
                 workTime -= stats.Difference / config.BalanceDays;
             if (workTime > 0)
-                alerts.AddLast(new Alert(workTime, false, config.OnFinishMsg, Alert.MessageType.URGENT));
+                alerts.AddLast(new Alert(workTime, false, config.OnFinishMessage, Alert.MessageType.URGENT));
 
             if (counter != null)
                 counter.Dispose();

@@ -69,7 +69,7 @@ namespace WorkTimer.ViewModels
         private string PrepareSummary()
         {
             string status = "    Status: " + ((stats.Difference > 0) ? ("+" + stats.Difference) : (stats.Difference.ToString())) + "m";
-            return stats.SumHeader + ": " + StatisticsManager.ParseTime(stats.Sum) + "    " + stats.AvgHeader + ": " + StatisticsManager.ParseTime(stats.Avg) + status;
+            return "Sum: " + StatisticsManager.ParseTime(stats.Sum) + "    Average: " + StatisticsManager.ParseTime(stats.Avg) + status;
 
         }
     }

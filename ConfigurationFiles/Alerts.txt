@@ -1,0 +1,3 @@
+﻿Active	Period	Repeat	Text
+true	10	true	Interrupt!
+true	15	false	Lunch break!
