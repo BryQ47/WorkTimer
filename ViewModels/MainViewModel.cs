@@ -42,13 +42,11 @@ namespace WorkTimer.ViewModels
             statsButtonCmd = new ButtonCommand(ShowStatistics, IsButtonActive);
             saveButtonCmd = new ButtonCommand(SaveExit, IsButtonActive);
 
-            counter = new Counter(UpdateTimeView, DisplayAlert);
             config = new ConfigurationManager();
-            config.LoadConfiguration();
+
+            LoadConfiguration();
+
             stats = new StatisticsManager(config);
-            counter.Set(config.StartTime);
-            ConfigureTimer();
-            counter.Start();
         }
 
         /* Refreshes displaing time
@@ -58,10 +56,8 @@ namespace WorkTimer.ViewModels
             int hh = minutes / 60;
             int mm = minutes - 60 * hh;
             TxtTime = String.Format("{0:D2}:{1:D2}", hh, mm);
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("TxtTime"));
-            }
+            var x = PropertyChanged;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("TxtTime"));
         }
 
         /* Shows periodic alert
@@ -143,12 +139,9 @@ namespace WorkTimer.ViewModels
         private void LoadConfiguration()
         {
             config.LoadConfiguration();
-            ConfigureTimer();
-        }
 
+            SetTaskbarVisibilityParam(config.VisibleInTaskbar);
 
-        private void ConfigureTimer()
-        {
             // Performing time balance
             LinkedList<Alert> alerts = config.AlertsList;
             int workTime = config.DefaultWorkTime;
@@ -157,8 +150,9 @@ namespace WorkTimer.ViewModels
             if (workTime > 0)
                 alerts.AddLast(new Alert(workTime, false, config.OnFinishMsg, Alert.MessageType.URGENT));
 
-            counter.SetAlerts(alerts);
-            SetTaskbarVisibilityParam(config.VisibleInTaskbar);
+            if (counter != null)
+                counter.Dispose();
+            counter = new Counter(config.StartTime, UpdateTimeView, DisplayAlert, alerts);
         }
     }
 }

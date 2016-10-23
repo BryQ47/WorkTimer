@@ -5,7 +5,7 @@ using WorkTimer.Models;
 
 namespace WorkTimer.Logic
 {
-    class Counter
+    class Counter : IDisposable
     {
 
 #if DEBUG
@@ -14,66 +14,71 @@ namespace WorkTimer.Logic
         private static readonly int MINUTE_INTERVAL = 60000;
 #endif
 
-        private Timer systemTimer;
-        private int minutesCount;
-        private Action<int> TimeUpdateCallback;
-        private Action<Alert> DisplayAlertCallback;
-        private LinkedList<Alert> alertsList;
+        private Timer _timer;
+        private int _minutesCount;
+        private Action<int> _updateDisplay;
+        private Action<Alert> _showAlert;
+        private LinkedList<Alert> _alerts;
 
-        public Counter(Action<int> timeUpdateCallback, Action<Alert> displayAlertCallback)
+        public Counter(DateTime startTime, Action<int> timeUpdateCallback, Action<Alert> displayAlertCallback, LinkedList<Alert> alerts)
         {
-            TimeUpdateCallback = timeUpdateCallback;
-            DisplayAlertCallback = displayAlertCallback;
-            systemTimer = new Timer(MINUTE_INTERVAL);
-            systemTimer.Elapsed += TimerEventHandler;
-            alertsList = new LinkedList<Alert>();
-        }
+            _updateDisplay = timeUpdateCallback;
+            _showAlert = displayAlertCallback;
 
-        public void Set(DateTime startTime)
-        {
             TimeSpan dt = DateTime.Now.Subtract(startTime);
 #if DEBUG
-            minutesCount = dt.Minutes * 60 + dt.Seconds;
+            _minutesCount = dt.Minutes * 60 + dt.Seconds;
 #else
             minutesCount = dt.Hours * 60 + dt.Minutes;
 #endif
-        }
 
-        public void SetAlerts(LinkedList<Alert> alerts)
-        {
-            alertsList = alerts;
-        }
+            _alerts = alerts;
 
-        public void Start()
-        {
-
-            systemTimer.Start();
-            TimeUpdateCallback(minutesCount);
+            _timer = new Timer(MINUTE_INTERVAL);
+            _timer.Elapsed += TimerEventHandler;
+            _timer.Start();
+            _updateDisplay(_minutesCount);
         }
 
         private void TimerEventHandler(Object source, ElapsedEventArgs e)
         {
-            ++minutesCount;
-            TimeUpdateCallback(minutesCount);
+            ++_minutesCount;
+            _updateDisplay(_minutesCount);
 
             Alert activatedAlert = null;
-            var alerts = alertsList;
+            var alerts = _alerts;
             LinkedListNode<Alert> node = alerts.First;
             LinkedListNode<Alert> next;
             
             while(node != null)
             {
                 next = node.Next;
-
-                if (!node.Value.Repeat && node.Value.Period < minutesCount)
-                    alerts.Remove(node);
-                else if (minutesCount % node.Value.Period == 0)
-                    activatedAlert = node.Value;
+                
+                if (_minutesCount % node.Value.Period == 0)
+                {
+                    if (node.Value.Repeat)
+                    {
+                        activatedAlert = node.Value;
+                    }
+                    else
+                    {
+                        if (node.Value.Period == _minutesCount)
+                            activatedAlert = node.Value;
+                        alerts.Remove(node);
+                    }
+                }
+                    
                 node = next;
             }
 
             if(activatedAlert != null)
-                DisplayAlertCallback(activatedAlert);
+                _showAlert(activatedAlert);
+        }
+
+        public void Dispose()
+        {
+            _timer.Stop();
+            _timer.Dispose();
         }
     }
 }
