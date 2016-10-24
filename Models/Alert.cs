@@ -1,6 +1,6 @@
 ﻿namespace WorkTimer.Models
 {
-    public class Alert
+    class Alert
     {
         public enum MessageType { NORMAL, URGENT };     // Message type
 

@@ -88,6 +88,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\TimeRecord.cs" />
     <Compile Include="ViewModels\StatsViewModel.cs" />
     <Compile Include="Logic\StatisticsManager.cs" />
     <Compile Include="Views\StatsView.xaml.cs">

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using WorkTimer.Helpers;
 using WorkTimer.Logic;
+using WorkTimer.Models;
 
 namespace WorkTimer.ViewModels
 {
@@ -13,25 +14,25 @@ namespace WorkTimer.ViewModels
         public string Data { get; private set; }
         public string Summary { get; private set; }
 
+        public List<TimeRecord> TimeRecords { get; private set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         private ButtonCommand statsExportCmd;
         public ICommand statsExportBtnClick { get { return statsExportCmd; } }
 
-        private StatisticsManager stats;
-
-        public StatsViewModel(StatisticsManager s)
+        public StatsViewModel()
         {
             statsExportCmd = new ButtonCommand(ExportStatistics, ()=>true);
-            stats = s;
             LoadData();
         }
 
         // Loads statistics file
         private void LoadData()
         {
-            Data = ConvertStatsToString(stats.Data);
+            Data = ConvertStatsToString(StatisticsManager.Instance.Data);
             Summary = PrepareSummary();
+            TimeRecords = StatisticsManager.Instance.Data;
 
             if (PropertyChanged != null)
             {
@@ -46,10 +47,10 @@ namespace WorkTimer.ViewModels
             SaveFileDialog exportDialog = new SaveFileDialog();
             exportDialog.DefaultExt = "csv";
             if (exportDialog.ShowDialog() == true)
-                stats.ExportStatistics(exportDialog.FileName);
+                StatisticsManager.Instance.ExportStatistics(exportDialog.FileName);
         }
 
-        private string ConvertStatsToString(List<TimeInfo> data)
+        private string ConvertStatsToString(List<TimeRecord> data)
         {
             int i = 0;
             StringBuilder output = new StringBuilder();
@@ -68,6 +69,7 @@ namespace WorkTimer.ViewModels
 
         private string PrepareSummary()
         {
+            var stats = StatisticsManager.Instance;
             string status = "    Status: " + ((stats.Difference > 0) ? ("+" + stats.Difference) : (stats.Difference.ToString())) + "m";
             return "Sum: " + StatisticsManager.ParseTime(stats.Sum) + "    Average: " + StatisticsManager.ParseTime(stats.Avg) + status;
 

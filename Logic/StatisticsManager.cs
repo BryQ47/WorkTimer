@@ -2,22 +2,32 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using WorkTimer.Models;
 
 namespace WorkTimer.Logic
 {
-    public class StatisticsManager
+    class StatisticsManager
     {
+        private static StatisticsManager _instance;
+
+        public static StatisticsManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = new StatisticsManager();
+                return _instance;
+            }
+        }
+
         private static readonly string STATS_FILE = "ConfigurationFiles\\Stats.txt";
         private static readonly string BACKUP_FILE = "ConfigurationFiles\\StatsBak.txt";
         private static readonly char[] SEPARATOR = { '\t' };
 
-        public List<TimeInfo> Data { get; private set; }
+        public List<TimeRecord> Data { get; private set; }
         public TimeSpan Sum { get; private set; }
         public TimeSpan Avg { get; private set; }
         public int Difference { get; private set; }
-        //public string[] columnHeaders { get; private set; }
-        //public string sumHeader { get; private set; }
-        //public string avgHeader { get; private set; }
 
         private enum Hdr { Beginnings, Endings, Time, Comments, Sum, Avg };
 
@@ -61,13 +71,14 @@ namespace WorkTimer.Logic
             return hdrs;
         }
 
-        public StatisticsManager(int defaultWorkTime)
+        private StatisticsManager()
         {
-            Data = new List<TimeInfo>();
+            int defaultWorkTime = ConfigurationManager.Instance.DefaultWorkTime;
+            Data = new List<TimeRecord>();
 
             using (var statsFile = new StreamReader(STATS_FILE))
             {
-                TimeInfo sample;
+                TimeRecord sample;
                 string line;
                 string[] lineContent;
                 Sum = TimeSpan.Zero;
@@ -75,6 +86,7 @@ namespace WorkTimer.Logic
 
                 while ((line = statsFile.ReadLine()) != null)
                 {
+                    sample = new TimeRecord();
                     lineContent = line.Split(SEPARATOR);
                     sample.Beginning = DateTime.Parse(lineContent[0]);
                     sample.End = DateTime.Parse(lineContent[1]);
@@ -93,7 +105,7 @@ namespace WorkTimer.Logic
         }
 
         // Saves worktime to statistics file
-        public void SaveWorkTime(DateTime startTime, string summary)
+        public static void SaveWorkTime(DateTime startTime, string summary)
         {
             using (var statsFile = new StreamWriter(STATS_FILE, true))
             {
@@ -198,14 +210,5 @@ namespace WorkTimer.Logic
 
             return s.ToString();
         }
-    }
-
-    // Single entry of stats file
-    public struct TimeInfo
-    {
-        public DateTime Beginning;  // Work beginning
-        public DateTime End;        // Work end
-        public TimeSpan Duration;   // Work time
-        public string Description;  // Work summary
     }
 }

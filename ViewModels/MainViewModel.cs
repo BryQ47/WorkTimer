@@ -13,8 +13,6 @@ namespace WorkTimer.ViewModels
     class MainViewModel : INotifyPropertyChanged
     {
         private Counter counter;
-        private ConfigurationManager config;
-        private StatisticsManager stats;
         private ButtonCommand statsButtonCmd;
         private ButtonCommand finishButtonCmd;
         private ButtonCommand configButtonCmd;
@@ -43,8 +41,6 @@ namespace WorkTimer.ViewModels
             configButtonCmd = new ButtonCommand(LoadConfiguration, isButtonActive);
             statsButtonCmd = new ButtonCommand(ShowStatistics, isButtonActive);
             saveButtonCmd = new ButtonCommand(SaveExit, isButtonActive);
-
-            config = new ConfigurationManager();
 
             LoadConfiguration();
         }
@@ -97,6 +93,7 @@ namespace WorkTimer.ViewModels
          */
         private void NormalExit()
         {
+            var config = ConfigurationManager.Instance;
             string summary = "";
             bool shutdown = true;
             config.ClearSavedTime();
@@ -110,7 +107,7 @@ namespace WorkTimer.ViewModels
                     summary = summaryDialog.Summary;
                 }
                 if(shutdown)
-                    stats.SaveWorkTime(config.StartTime, summary);
+                    StatisticsManager.SaveWorkTime(config.StartTime, summary);
             }
             if(shutdown)
                 Application.Current.Shutdown();
@@ -127,13 +124,13 @@ namespace WorkTimer.ViewModels
         */
         private void ShowStatistics()
         {
-            var statsView = new StatsView(stats);
+            var statsView = new StatsView();
             statsView.ShowDialog();
         }
 
         private void LoadConfiguration()
         {
-            stats = new StatisticsManager(config.DefaultWorkTime);
+            var config = ConfigurationManager.Instance;
 
             SetTaskbarVisibilityParam(config.VisibleInTaskbar);
 
@@ -141,7 +138,7 @@ namespace WorkTimer.ViewModels
             LinkedList<Alert> alerts = config.LoadAlerts();
             int workTime = config.DefaultWorkTime - config.AdditionalTime;
             if (config.BalanceOn)
-                workTime -= stats.Difference / config.BalanceDays;
+                workTime -= StatisticsManager.Instance.Difference / config.BalanceDays;
             if (workTime > 0)
                 alerts.AddLast(new Alert(workTime, false, config.OnFinishMessage, Alert.MessageType.URGENT));
 

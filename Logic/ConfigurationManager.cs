@@ -8,8 +8,20 @@ using WorkTimer.Properties;
 
 namespace WorkTimer.Logic
 {
-    public class ConfigurationManager
+    class ConfigurationManager
     {
+        private static ConfigurationManager _instance;
+
+        public static ConfigurationManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = new ConfigurationManager();
+                return _instance;
+            }
+        }
+
         private Settings _settings = Settings.Default;
         private static readonly string SAVED_TIME_FILE = "ConfigurationFiles\\Saved.txt";            // File with program start time
         private static readonly string ALERTS_FILE = "ConfigurationFiles\\Alerts.txt";               // File with alerst definitions
@@ -83,7 +95,7 @@ namespace WorkTimer.Logic
 
         public DateTime StartTime { get; private set; }
 
-        public ConfigurationManager()
+        private ConfigurationManager()
         {
             string savedValue = File.ReadAllText(SAVED_TIME_FILE);
 
